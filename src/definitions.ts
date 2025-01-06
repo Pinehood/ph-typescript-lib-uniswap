@@ -37,3 +37,11 @@ export interface TradeInfo {
 }
 
 export type TokenTrade = Trade<Token, Token, TradeType>;
+
+export type CryptoAsset = {
+  name: string;
+  symbol: string;
+  address?: string;
+  coinType?: number;
+  isErc20?: boolean;
+};
