@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "es2020",
+    "lib": ["es6"],
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "baseUrl": "./",
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"]
+}
