@@ -1,15 +1,15 @@
 import { Token, TradeType } from '@uniswap/sdk-core';
 import { Trade } from '@uniswap/v3-sdk';
 
-export enum TransactionState {
-  Failed = 'Failed',
-  New = 'New',
-  Rejected = 'Rejected',
-  Sending = 'Sending',
-  Sent = 'Sent',
+export enum ETransactionStates {
+  FAILED = 'Failed',
+  NEW = 'New',
+  REJECTED = 'Rejected',
+  SENDING = 'Sending',
+  SENT = 'Sent',
 }
 
-export interface ExampleConfig {
+export interface IExampleConfig {
   chainId: number;
   name: string;
   rpc: string;
@@ -18,7 +18,7 @@ export interface ExampleConfig {
   swapRouterAddress: string;
 }
 
-export interface PoolInfo {
+export interface IPoolInfo {
   token0: string;
   token1: string;
   fee: number;
@@ -28,20 +28,32 @@ export interface PoolInfo {
   tick: number;
 }
 
-export interface TradeInfo {
-  pool: PoolInfo;
+export interface ITradeInfo {
+  pool: IPoolInfo;
   tokenIn: Token;
   tokenOut: Token;
   amount: number;
-  trade: TokenTrade;
+  trade: TTokenTrade;
 }
 
-export type TokenTrade = Trade<Token, Token, TradeType>;
+export type TTokenTrade = Trade<Token, Token, TradeType>;
 
-export type CryptoAsset = {
+export type TCryptoAsset = {
   name: string;
   symbol: string;
   address?: string;
   coinType?: number;
   isErc20?: boolean;
+};
+
+export type TPreviewData = Partial<{
+  output: string;
+  price: string;
+  gas: string;
+}>;
+
+export type TUniswapConfig = {
+  chainId: number;
+  rpcUrl: string;
+  privKey: string;
 };

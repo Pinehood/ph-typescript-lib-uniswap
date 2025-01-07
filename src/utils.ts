@@ -4,7 +4,7 @@ import { Token, TradeType } from '@uniswap/sdk-core';
 import { Provider } from 'ethers';
 import { ethers, toNumber } from 'ethers';
 import { ERC20_ABI } from './constants';
-import { TransactionState } from './definitions';
+import { ETransactionStates } from './definitions';
 
 export function fromReadableAmount(amount: number, decimals: number): bigint {
   return ethers.parseUnits(amount.toString(), decimals);
@@ -63,10 +63,10 @@ export async function sendTransaction(
   wallet: ethers.Wallet,
   transaction: ethers.TransactionRequest,
   noWait?: boolean
-): Promise<TransactionState> {
+): Promise<ETransactionStates> {
   const provider = wallet.provider;
   if (!provider) {
-    return TransactionState.Failed;
+    return ETransactionStates.FAILED;
   }
 
   if (transaction.value) {
@@ -97,8 +97,8 @@ export async function sendTransaction(
   }
 
   if (receipt || noWait) {
-    return TransactionState.Sent;
+    return ETransactionStates.SENT;
   } else {
-    return TransactionState.Failed;
+    return ETransactionStates.FAILED;
   }
 }

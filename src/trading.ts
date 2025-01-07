@@ -8,10 +8,12 @@ import {
   Trade,
   FeeAmount,
 } from '@uniswap/v3-sdk';
+import { AlphaRouter, SwapType } from '@uniswap/smart-order-router';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
 import { ethers, toNumber } from 'ethers';
 import { Provider } from 'ethers';
+import { BaseProvider } from '@ethersproject/providers';
 import JSBI from 'jsbi';
 import {
   ERC20_ABI,
@@ -20,7 +22,12 @@ import {
   POOL_FACTORY_CONTRACT_ADDRESS,
 } from './constants';
 import { fromReadableAmount, createWallet, sendTransaction } from './utils';
-import { PoolInfo, TradeInfo, TransactionState } from './definitions';
+import {
+  IPoolInfo,
+  ITradeInfo,
+  ETransactionStates,
+  TPreviewData,
+} from './definitions';
 
 export class Trading {
   private _wallet: ethers.Wallet;
@@ -69,7 +76,7 @@ export class Trading {
     return this._wallet.address;
   }
 
-  async getPoolInfo(tokenIn: Token, tokenOut: Token): Promise<PoolInfo> {
+  async getPoolInfo(tokenIn: Token, tokenOut: Token): Promise<IPoolInfo> {
     const provider = this._wallet.provider;
     if (!provider) {
       throw new Error('No provider');
@@ -137,11 +144,11 @@ export class Trading {
     };
   }
 
-  async getTokenApprovalMax(token: Token): Promise<TransactionState> {
+  async getTokenApprovalMax(token: Token): Promise<ETransactionStates> {
     const provider = this.getProvider();
     const address = this.getWalletAddress();
     if (!provider || !address) {
-      return TransactionState.Failed;
+      return ETransactionStates.FAILED;
     }
     try {
       const tokenContract = new ethers.Contract(
@@ -158,18 +165,18 @@ export class Trading {
         from: address,
       });
     } catch {
-      return TransactionState.Failed;
+      return ETransactionStates.FAILED;
     }
   }
 
   async getTokenTransferApproval(
     token: Token,
     requiredAmount: number
-  ): Promise<TransactionState> {
+  ): Promise<ETransactionStates> {
     const provider = this.getProvider();
     const address = this.getWalletAddress();
     if (!provider || !address) {
-      return TransactionState.Failed;
+      return ETransactionStates.FAILED;
     }
     try {
       const tokenContract = new ethers.Contract(
@@ -187,7 +194,7 @@ export class Trading {
       );
 
       if (allowance > requiredAllowance) {
-        return TransactionState.Sent;
+        return ETransactionStates.SENT;
       }
 
       const transaction = await tokenContract.approve.populateTransaction(
@@ -200,7 +207,7 @@ export class Trading {
         from: address,
       });
     } catch {
-      return TransactionState.Failed;
+      return ETransactionStates.FAILED;
     }
   }
 
@@ -208,9 +215,8 @@ export class Trading {
     tokenIn: Token,
     tokenOut: Token,
     amountIn: number
-  ): Promise<TradeInfo> {
+  ): Promise<ITradeInfo> {
     const provider = this.getProvider();
-
     if (!provider) {
       throw new Error('Provider required to get pool state');
     }
@@ -270,7 +276,7 @@ export class Trading {
     };
   }
 
-  async executeTrade(tradeInfo: TradeInfo): Promise<TransactionState> {
+  async executeTrade(tradeInfo: ITradeInfo): Promise<ETransactionStates> {
     const walletAddress = this.getWalletAddress();
     const provider = this.getProvider();
 
@@ -279,7 +285,7 @@ export class Trading {
     }
 
     const options: SwapOptions = {
-      slippageTolerance: new Percent(50, 10_000),
+      slippageTolerance: new Percent(5, 10_000),
       deadline: Math.floor(Date.now() / 1000) + 60 * 15,
       recipient: walletAddress,
     };
@@ -297,5 +303,40 @@ export class Trading {
     };
     const res = await sendTransaction(this._wallet, tx, true);
     return res;
+  }
+
+  async previewTrade(tradeInfo: ITradeInfo): Promise<TPreviewData> {
+    const provider = this.getProvider() as unknown as BaseProvider;
+    const walletAddress = this.getWalletAddress();
+    if (!walletAddress || !provider) {
+      throw new Error(
+        'Cannot execute a trade preview without a connected wallet'
+      );
+    }
+
+    const router = new AlphaRouter({ chainId: this._chainId, provider });
+
+    const amountIn = CurrencyAmount.fromRawAmount(
+      tradeInfo.tokenIn,
+      ethers.parseEther('1').toString()
+    );
+
+    const route = await router.route(
+      amountIn,
+      tradeInfo.tokenOut,
+      TradeType.EXACT_INPUT,
+      {
+        recipient: walletAddress,
+        slippageTolerance: new Percent(5, 100),
+        deadline: Math.floor(Date.now() / 1000) + 60 * 15,
+        type: SwapType.SWAP_ROUTER_02,
+      }
+    );
+
+    return {
+      output: route?.quote.toSignificant(6),
+      price: route?.quote.toFixed(6),
+      gas: route?.estimatedGasUsed.toString(),
+    };
   }
 }

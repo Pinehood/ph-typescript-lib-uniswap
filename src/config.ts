@@ -1,6 +1,6 @@
-import { ExampleConfig } from './definitions';
+import { IExampleConfig } from './definitions';
 
-const CONTRACT_CONFIG: Array<ExampleConfig> = [
+const CONTRACT_CONFIG: Array<IExampleConfig> = [
   {
     name: 'eth-mainnet',
     chainId: 1,
@@ -19,7 +19,7 @@ const CONTRACT_CONFIG: Array<ExampleConfig> = [
   },
 ];
 
-export function loadTradeConfig(chainId: number): ExampleConfig | null {
+export function loadTradeConfig(chainId: number): IExampleConfig | null {
   for (let index = 0; index < CONTRACT_CONFIG.length; index++) {
     const element = CONTRACT_CONFIG[index];
     if (element.chainId == chainId) {
