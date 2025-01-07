@@ -56,6 +56,11 @@ export class Trading {
   getWallet(): ethers.Wallet | null {
     return this._wallet;
   }
+
+  getChainId(): number {
+    return this._chainId;
+  }
+
   getProvider(): Provider | null {
     return this._wallet.provider;
   }
