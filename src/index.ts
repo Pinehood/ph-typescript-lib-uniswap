@@ -11,6 +11,41 @@ export class UniswapClient {
     this.config = config;
   }
 
+  async getBalance(tokenAddress: string) {
+    const {
+      chainId = 1,
+      rpcUrl = 'https://eth.llamarpc.com',
+      privKey,
+    } = this.config;
+
+    const conf = loadTradeConfig(chainId);
+    if (!conf) {
+      throw new Error(`invalid chain id ${chainId}`);
+    }
+
+    const T = new Trading(
+      privKey,
+      rpcUrl || conf.rpc,
+      conf.chainId,
+      conf.poolFactoryAddress,
+      conf.swapRouterAddress,
+      conf.quoterAddress
+    );
+
+    return getCurrencyBalance(
+      T.getProvider()!,
+      T.getWalletAddress()!,
+      new Token(
+        conf.chainId,
+        tokenAddress,
+        await getCurrencyDecimals(
+          T.getProvider()!,
+          new Token(conf.chainId, tokenAddress, 18)
+        )
+      )
+    );
+  }
+
   async swapTokens(
     tokenInAddress: string,
     tokenOutAddress: string,
@@ -19,7 +54,11 @@ export class UniswapClient {
     needApproval?: boolean,
     approvalMax?: boolean
   ) {
-    const { chainId, rpcUrl, privKey } = this.config;
+    const {
+      chainId = 1,
+      rpcUrl = 'https://eth.llamarpc.com',
+      privKey,
+    } = this.config;
 
     const conf = loadTradeConfig(chainId);
     if (!conf) {
