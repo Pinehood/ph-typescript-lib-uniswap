@@ -1,6 +1,6 @@
-import bip39 from 'bip39';
 import hdkey from 'hdkey';
 import ECPairFactory from 'ecpair';
+import * as bip39 from 'bip39';
 import * as wif from 'wif';
 import * as ethWallet from 'ethereumjs-wallet';
 import * as bitcoin from 'bitcoinjs-lib';

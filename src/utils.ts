@@ -87,7 +87,6 @@ export async function sendTransaction(
   while (!noWait && receipt === null) {
     try {
       receipt = await provider.getTransactionReceipt(txRes.hash);
-
       if (receipt === null) {
         continue;
       }

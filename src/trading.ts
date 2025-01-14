@@ -8,12 +8,10 @@ import {
   Trade,
   FeeAmount,
 } from '@uniswap/v3-sdk';
-import { AlphaRouter, SwapType } from '@uniswap/smart-order-router';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
 import { ethers, toNumber } from 'ethers';
 import { Provider } from 'ethers';
-import { BaseProvider } from '@ethersproject/providers';
 import JSBI from 'jsbi';
 import {
   ERC20_ABI,
@@ -306,37 +304,42 @@ export class Trading {
   }
 
   async previewTrade(tradeInfo: ITradeInfo): Promise<TPreviewData> {
-    const provider = this.getProvider() as unknown as BaseProvider;
-    const walletAddress = this.getWalletAddress();
-    if (!walletAddress || !provider) {
-      throw new Error(
-        'Cannot execute a trade preview without a connected wallet'
-      );
-    }
+    const { tokenIn, tokenOut, amount } = tradeInfo;
 
-    const router = new AlphaRouter({ chainId: this._chainId, provider });
-
-    const amountIn = CurrencyAmount.fromRawAmount(
-      tradeInfo.tokenIn,
-      ethers.parseEther('1').toString()
+    const poolInfo = await this.getPoolInfo(tokenIn, tokenOut);
+    const pool = new Pool(
+      tokenIn,
+      tokenOut,
+      poolInfo.fee,
+      poolInfo.sqrtPriceX96.toString(),
+      poolInfo.liquidity.toString(),
+      poolInfo.tick
     );
 
-    const route = await router.route(
-      amountIn,
-      tradeInfo.tokenOut,
-      TradeType.EXACT_INPUT,
-      {
-        recipient: walletAddress,
-        slippageTolerance: new Percent(5, 100),
-        deadline: Math.floor(Date.now() / 1000) + 60 * 15,
-        type: SwapType.SWAP_ROUTER_02,
-      }
+    const amountInCurrency = CurrencyAmount.fromRawAmount(
+      tokenIn,
+      ethers.parseUnits('' + amount, 18).toString()
     );
+
+    const amountOutCurrency = CurrencyAmount.fromRawAmount(
+      tokenOut,
+      ethers.parseUnits('0', 18).toString()
+    );
+
+    const route = new Route([pool], tokenIn, tokenOut);
+    const trade = Trade.createUncheckedTrade({
+      route,
+      inputAmount: amountInCurrency,
+      outputAmount: amountOutCurrency,
+      tradeType: TradeType.EXACT_INPUT,
+    });
+
+    const output = trade.outputAmount.toSignificant(6);
+    const price = trade.priceImpact.toSignificant(6);
 
     return {
-      output: route?.quote.toSignificant(6),
-      price: route?.quote.toFixed(6),
-      gas: route?.estimatedGasUsed.toString(),
+      output,
+      price,
     };
   }
 }
