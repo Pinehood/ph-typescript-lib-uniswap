@@ -33,11 +33,9 @@ export async function getCurrencyBalance(
   if (currency.isNative) {
     return ethers.formatEther(await provider.getBalance(address));
   }
-  const ERC20Contract = new ethers.Contract(
-    currency.address,
-    ERC20_ABI,
-    provider
-  );
+  const ERC20Contract = new ethers.Contract(currency.address, ERC20_ABI, {
+    provider,
+  });
   const balance: number = await ERC20Contract.balanceOf(address);
   const decimals: number = await ERC20Contract.decimals();
   return toReadableAmount(balance, decimals);
@@ -50,11 +48,9 @@ export async function getCurrencyDecimals(
   if (currency.isNative) {
     return 18;
   }
-  const ERC20Contract = new ethers.Contract(
-    currency.address,
-    ERC20_ABI,
-    provider
-  );
+  const ERC20Contract = new ethers.Contract(currency.address, ERC20_ABI, {
+    provider,
+  });
   const decimals: bigint = await ERC20Contract.decimals();
   return toNumber(decimals);
 }

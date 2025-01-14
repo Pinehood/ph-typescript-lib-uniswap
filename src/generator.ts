@@ -1,8 +1,8 @@
 import hdkey from 'hdkey';
 import ECPairFactory from 'ecpair';
+import Wallet from 'ethereumjs-wallet';
 import * as bip39 from 'bip39';
 import * as wif from 'wif';
-import * as ethWallet from 'ethereumjs-wallet';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
 import { Keypair } from '@solana/web3.js';
@@ -48,10 +48,10 @@ export async function generatePrivateKeyAndContractAddress(
   const privateKey = wallet.privateKey;
   let publicAddress = 'N/A';
   if (isERC20 || coinType === 60) {
-    const ethWalletInstance = ethWallet.default.fromPrivateKey(privateKey);
+    const ethWalletInstance = Wallet.fromPrivateKey(privateKey);
     publicAddress = ethWalletInstance.getAddressString();
     return {
-      key: '0x' + privateKey.toString('hex'),
+      key: ethWalletInstance.getPrivateKeyString(),
       address: publicAddress,
     };
   }
