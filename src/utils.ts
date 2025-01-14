@@ -20,9 +20,9 @@ export function displayTrade(trade: Trade<Token, Token, TradeType>): string {
   } for ${trade.outputAmount.toExact()} ${trade.outputAmount.currency.symbol}`;
 }
 
-export function createWallet(priKey: string, rpcUrl: string): ethers.Wallet {
+export function createWallet(privKey: string, rpcUrl: string): ethers.Wallet {
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  return new ethers.Wallet(priKey, provider);
+  return new ethers.Wallet(privKey, provider);
 }
 
 export async function getCurrencyBalance(
