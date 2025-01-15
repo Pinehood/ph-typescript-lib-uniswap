@@ -11,17 +11,22 @@ export class UniswapClient {
     this.config = config;
   }
 
-  async getBalance(tokenAddress: string) {
+  async getBalance(tokenAddress?: string) {
     const { chainId = 1, privKey } = this.config;
     const conf = loadTradeConfig(chainId);
     if (!conf) {
-      throw new Error(`invalid chain id ${chainId}`);
+      throw new Error(`Invalid chain id ${chainId}`);
+    }
+
+    if (!tokenAddress) {
+      return '-1';
     }
 
     const T = new Trading(
       privKey,
       conf.rpc,
       conf.chainId,
+      this.config.infuraApiKey,
       conf.poolFactoryAddress,
       conf.swapRouterAddress,
       conf.quoterAddress
@@ -52,13 +57,14 @@ export class UniswapClient {
     const { chainId = 1, privKey } = this.config;
     const conf = loadTradeConfig(chainId);
     if (!conf) {
-      throw new Error(`invalid chain id ${chainId}`);
+      throw new Error(`Invalid chain id ${chainId}`);
     }
 
     const T = new Trading(
       privKey,
       conf.rpc,
       conf.chainId,
+      this.config.infuraApiKey,
       conf.poolFactoryAddress,
       conf.swapRouterAddress,
       conf.quoterAddress

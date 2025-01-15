@@ -22,3 +22,25 @@ Uniswap wrapper - original source code taken from [here](https://github.com/Web3
    ```
 
 3. Both of the above commands should have completed successfully, and should have not caused any "package.json" or "package-lock.json" changes.
+
+## Example balance fetch
+
+```typescript
+import { generatePrivateKeyAndContractAddress, UniswapClient } from '.';
+
+(async function () {
+  const { key, address, contract } = await generatePrivateKeyAndContractAddress(
+    'mnemonic',
+    'USDC'
+  );
+  const client = new UniswapClient({
+    privKey: key,
+    infuraApiKey: 'api-key',
+  });
+  try {
+    console.log(contract, await client.getBalance(contract ?? address));
+  } catch (e) {
+    console.error(e);
+  }
+})();
+```

@@ -28,16 +28,17 @@ import {
 } from './definitions';
 
 export class Trading {
-  private _wallet: ethers.Wallet;
-  private _chainId: number;
-  private _poolFactoryAddress: string = POOL_FACTORY_CONTRACT_ADDRESS;
-  private _swapRouterAddress: string = SWAP_ROUTER_ADDRESS;
-  private _quoterAddress: string = QUOTER_CONTRACT_ADDRESS;
+  private readonly wallet: ethers.Wallet;
+  private readonly chainId: number;
+  private readonly poolFactoryAddress: string = POOL_FACTORY_CONTRACT_ADDRESS;
+  private readonly swapRouterAddress: string = SWAP_ROUTER_ADDRESS;
+  private readonly quoterAddress: string = QUOTER_CONTRACT_ADDRESS;
 
   constructor(
     key: string,
     provider: string,
     chainId: number,
+    infuraApiKey: string,
     poolFactoryAddress?: string,
     swapRounerAddress?: string,
     quoterAddress?: string
@@ -45,43 +46,43 @@ export class Trading {
     if (typeof key === 'string' && !key.startsWith('0x')) {
       key = '0x' + key;
     }
-    this._wallet = createWallet(key, provider);
-    this._chainId = chainId;
+    this.wallet = createWallet(key, provider, infuraApiKey);
+    this.chainId = chainId;
     if (poolFactoryAddress) {
-      this._poolFactoryAddress = poolFactoryAddress;
+      this.poolFactoryAddress = poolFactoryAddress;
     }
     if (swapRounerAddress) {
-      this._swapRouterAddress = swapRounerAddress;
+      this.swapRouterAddress = swapRounerAddress;
     }
     if (quoterAddress) {
-      this._quoterAddress = quoterAddress;
+      this.quoterAddress = quoterAddress;
     }
   }
 
   getWallet(): ethers.Wallet | null {
-    return this._wallet;
+    return this.wallet;
   }
 
   getChainId(): number {
-    return this._chainId;
+    return this.chainId;
   }
 
   getProvider(): Provider | null {
-    return this._wallet.provider;
+    return this.wallet.provider;
   }
 
   getWalletAddress(): string | null {
-    return this._wallet.address;
+    return this.wallet.address;
   }
 
   async getPoolInfo(tokenIn: Token, tokenOut: Token): Promise<IPoolInfo> {
-    const provider = this._wallet.provider;
+    const provider = this.wallet.provider;
     if (!provider) {
       throw new Error('No provider');
     }
 
     const factoryContract = new ethers.Contract(
-      this._poolFactoryAddress,
+      this.poolFactoryAddress,
       IUniswapV3FactoryABI.abi,
       provider
     );
@@ -152,13 +153,13 @@ export class Trading {
       const tokenContract = new ethers.Contract(
         token.address,
         ERC20_ABI,
-        this._wallet
+        this.wallet
       );
       const transaction = await tokenContract.approve.populateTransaction(
-        this._swapRouterAddress,
+        this.swapRouterAddress,
         ethers.MaxUint256
       );
-      return sendTransaction(this._wallet, {
+      return sendTransaction(this.wallet, {
         ...transaction,
         from: address,
       });
@@ -180,7 +181,7 @@ export class Trading {
       const tokenContract = new ethers.Contract(
         token.address,
         ERC20_ABI,
-        this._wallet
+        this.wallet
       );
       const requiredAllowance = fromReadableAmount(
         requiredAmount,
@@ -188,7 +189,7 @@ export class Trading {
       );
       const allowance = await tokenContract.allowance(
         address,
-        this._swapRouterAddress
+        this.swapRouterAddress
       );
 
       if (allowance > requiredAllowance) {
@@ -196,11 +197,11 @@ export class Trading {
       }
 
       const transaction = await tokenContract.approve.populateTransaction(
-        this._swapRouterAddress,
+        this.swapRouterAddress,
         requiredAllowance
       );
 
-      return sendTransaction(this._wallet, {
+      return sendTransaction(this.wallet, {
         ...transaction,
         from: address,
       });
@@ -243,7 +244,7 @@ export class Trading {
     );
 
     const quoteCallReturnData = await provider.call({
-      to: this._quoterAddress,
+      to: this.quoterAddress,
       data: calldata,
     });
 
@@ -274,7 +275,7 @@ export class Trading {
     };
   }
 
-  async executeTrade(tradeInfo: ITradeInfo): Promise<ETransactionStates> {
+  executeTrade(tradeInfo: ITradeInfo): Promise<ETransactionStates> {
     const walletAddress = this.getWalletAddress();
     const provider = this.getProvider();
 
@@ -282,25 +283,22 @@ export class Trading {
       throw new Error('Cannot execute a trade without a connected wallet');
     }
 
-    const options: SwapOptions = {
+    const methodParameters = SwapRouter.swapCallParameters([tradeInfo.trade], {
       slippageTolerance: new Percent(5, 10_000),
       deadline: Math.floor(Date.now() / 1000) + 60 * 15,
       recipient: walletAddress,
-    };
+    });
 
-    const methodParameters = SwapRouter.swapCallParameters(
-      [tradeInfo.trade],
-      options
+    return sendTransaction(
+      this.wallet,
+      {
+        data: methodParameters.calldata,
+        to: this.swapRouterAddress,
+        value: methodParameters.value,
+        from: walletAddress,
+      },
+      true
     );
-
-    const tx = {
-      data: methodParameters.calldata,
-      to: this._swapRouterAddress,
-      value: methodParameters.value,
-      from: walletAddress,
-    };
-    const res = await sendTransaction(this._wallet, tx, true);
-    return res;
   }
 
   async previewTrade(tradeInfo: ITradeInfo): Promise<TPreviewData> {

@@ -28,12 +28,17 @@ export async function generatePrivateKeyAndContractAddress(
         (a) => a.isErc20 !== true && a.symbol === coin
       )?.coinType ?? -1);
 
+  const contract = SUPPORTED_CRYPTO_ASSETS.find(
+    (a) => a.symbol === coin
+  )?.address;
+
   if (coin === 'SOL') {
     const solanaSeed = seed.slice(0, 32);
     const keypair = Keypair.fromSeed(solanaSeed);
     return {
       key: Buffer.from(keypair.secretKey).toString('hex'),
       address: keypair.publicKey.toBase58(),
+      contract,
     };
   }
 
@@ -53,6 +58,7 @@ export async function generatePrivateKeyAndContractAddress(
     return {
       key: ethWalletInstance.getPrivateKeyString(),
       address: publicAddress,
+      contract,
     };
   }
 
@@ -71,11 +77,13 @@ export async function generatePrivateKeyAndContractAddress(
     return {
       key: wifPrivateKey,
       address,
+      contract,
     };
   }
 
   return {
     key: privateKey.toString('hex'),
     address: publicAddress,
+    contract,
   };
 }
