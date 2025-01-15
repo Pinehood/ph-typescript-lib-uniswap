@@ -55,5 +55,4 @@ export type TPreviewData = Partial<{
 export type TUniswapConfig = {
   chainId?: number;
   privKey: string;
-  infuraApiKey: string;
 };

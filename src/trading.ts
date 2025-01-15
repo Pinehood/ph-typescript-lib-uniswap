@@ -38,7 +38,6 @@ export class Trading {
     key: string,
     provider: string,
     chainId: number,
-    infuraApiKey: string,
     poolFactoryAddress?: string,
     swapRounerAddress?: string,
     quoterAddress?: string
@@ -46,7 +45,7 @@ export class Trading {
     if (typeof key === 'string' && !key.startsWith('0x')) {
       key = '0x' + key;
     }
-    this.wallet = createWallet(key, provider, infuraApiKey);
+    this.wallet = createWallet(key, provider);
     this.chainId = chainId;
     if (poolFactoryAddress) {
       this.poolFactoryAddress = poolFactoryAddress;

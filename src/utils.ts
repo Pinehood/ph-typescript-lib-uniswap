@@ -20,12 +20,8 @@ export function displayTrade(trade: Trade<Token, Token, TradeType>): string {
   } for ${trade.outputAmount.toExact()} ${trade.outputAmount.currency.symbol}`;
 }
 
-export function createWallet(
-  privKey: string,
-  rpcUrl: string,
-  apiKey: string
-): ethers.Wallet {
-  const provider = new ethers.JsonRpcProvider(rpcUrl + apiKey);
+export function createWallet(privKey: string, rpcUrl: string): ethers.Wallet {
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
   return new ethers.Wallet(privKey, provider);
 }
 

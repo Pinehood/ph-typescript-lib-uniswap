@@ -26,7 +26,6 @@ export class UniswapClient {
       privKey,
       conf.rpc,
       conf.chainId,
-      this.config.infuraApiKey,
       conf.poolFactoryAddress,
       conf.swapRouterAddress,
       conf.quoterAddress
@@ -64,7 +63,6 @@ export class UniswapClient {
       privKey,
       conf.rpc,
       conf.chainId,
-      this.config.infuraApiKey,
       conf.poolFactoryAddress,
       conf.swapRouterAddress,
       conf.quoterAddress
