@@ -2,7 +2,6 @@ import { CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core';
 import {
   Pool,
   Route,
-  SwapOptions,
   SwapQuoter,
   SwapRouter,
   Trade,
