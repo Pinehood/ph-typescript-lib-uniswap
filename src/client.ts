@@ -1,8 +1,14 @@
 import { Token } from '@uniswap/sdk-core';
+import { formatEther } from 'ethers';
 import { Trading } from './trading';
 import { loadTradeConfig } from './config';
-import { ETransactionStates, TUniswapConfig } from './definitions';
 import { getCurrencyBalance, getCurrencyDecimals } from './utils';
+import {
+  ETransactionStates,
+  TPreviewData,
+  TTransactionState,
+  TUniswapConfig,
+} from './definitions';
 
 export class UniswapClient {
   private readonly config: TUniswapConfig;
@@ -15,34 +21,38 @@ export class UniswapClient {
     const { chainId = 1, rpcUrl, privKey } = this.config;
     const conf = loadTradeConfig(chainId);
     if (!conf) {
-      throw new Error(`Invalid chain id ${chainId}`);
+      throw new Error(`Invalid chain ID ${chainId}`);
     }
 
-    if (!tokenAddress) {
-      return '-1';
-    }
-
-    const T = new Trading(
+    const trading = new Trading(
       privKey,
       rpcUrl || conf.rpc,
       conf.chainId,
       conf.poolFactoryAddress,
       conf.swapRouterAddress,
-      conf.quoterAddress
+      conf.quoterAddress,
+      this.config.slippage,
+      this.config.deadline
     );
 
-    return getCurrencyBalance(
-      T.getProvider()!,
-      T.getWalletAddress()!,
-      new Token(
-        conf.chainId,
-        tokenAddress,
-        await getCurrencyDecimals(
-          T.getProvider()!,
-          new Token(conf.chainId, tokenAddress, 18)
-        )
-      )
-    );
+    const provider = trading.getProvider();
+    const walletAddress = trading.getWalletAddress();
+    if (!provider || !walletAddress) {
+      throw new Error('No provider or wallet address');
+    }
+
+    const isSame = walletAddress.toLowerCase() === tokenAddress?.toLowerCase();
+    if (!isSame && tokenAddress?.startsWith('0x')) {
+      const decimals = await getCurrencyDecimals(
+        provider,
+        new Token(conf.chainId, tokenAddress, 18)
+      );
+      const token = new Token(conf.chainId, tokenAddress, decimals);
+      return Number(await getCurrencyBalance(provider, walletAddress, token));
+    }
+
+    const balance = await provider.getBalance(walletAddress);
+    return parseFloat(formatEther(balance));
   }
 
   async swapTokens(
@@ -52,38 +62,52 @@ export class UniswapClient {
     previewOnly?: boolean,
     needApproval?: boolean,
     approvalMax?: boolean
-  ) {
+  ): Promise<TTransactionState | TPreviewData> {
     const { chainId = 1, rpcUrl, privKey } = this.config;
     const conf = loadTradeConfig(chainId);
     if (!conf) {
-      throw new Error(`Invalid chain id ${chainId}`);
+      throw new Error(`Invalid chain ID ${chainId}`);
     }
 
-    const T = new Trading(
+    const trading = new Trading(
       privKey,
       rpcUrl || conf.rpc,
       conf.chainId,
       conf.poolFactoryAddress,
       conf.swapRouterAddress,
-      conf.quoterAddress
+      conf.quoterAddress,
+      this.config.slippage,
+      this.config.deadline
     );
 
-    const tokenInDecimals = await getCurrencyDecimals(
-      T.getProvider()!,
-      new Token(conf.chainId, tokenInAddress, 18)
-    );
+    const provider = trading.getProvider();
+    const walletAddress = trading.getWalletAddress();
+    if (!provider || !walletAddress) {
+      return ETransactionStates.FAILED;
+    }
 
-    const tokenOutDecimals = await getCurrencyDecimals(
-      T.getProvider()!,
-      new Token(conf.chainId, tokenOutAddress, 18)
-    );
+    const results = await Promise.allSettled([
+      getCurrencyDecimals(
+        provider,
+        new Token(conf.chainId, tokenInAddress, 18)
+      ),
+      getCurrencyDecimals(
+        provider,
+        new Token(conf.chainId, tokenOutAddress, 18)
+      ),
+    ]);
+
+    const tokenInDecimals =
+      results[0].status === 'fulfilled' ? results[0].value : 18;
+    const tokenOutDecimals =
+      results[1].status === 'fulfilled' ? results[1].value : 18;
 
     const tokenIn = new Token(conf.chainId, tokenInAddress, tokenInDecimals);
     const tokenOut = new Token(conf.chainId, tokenOutAddress, tokenOutDecimals);
 
     const tokenInBalance = await getCurrencyBalance(
-      T.getProvider()!,
-      T.getWalletAddress()!,
+      provider,
+      walletAddress,
       tokenIn
     );
 
@@ -96,21 +120,26 @@ export class UniswapClient {
     }
 
     if (needApproval && tokenIn.isToken) {
-      let ret: ETransactionStates;
-      if (approvalMax) {
-        ret = await T.getTokenApprovalMax(tokenIn);
-      } else {
-        ret = await T.getTokenTransferApproval(tokenIn, amountToSwap);
-      }
+      const ret = approvalMax
+        ? await trading.getTokenApprovalMax(tokenIn)
+        : await trading.getTokenTransferApproval(tokenIn, amountToSwap);
       if (ret !== ETransactionStates.SENT) {
         return ETransactionStates.FAILED;
       }
     }
 
-    const tradeInfo = await T.createTrade(tokenIn, tokenOut, amountToSwap);
-    if (previewOnly) {
-      return T.previewTrade(tradeInfo);
+    const tradeInfo = await trading.createTrade(
+      tokenIn,
+      tokenOut,
+      amountToSwap
+    );
+    if (!tradeInfo) {
+      return ETransactionStates.FAILED;
     }
-    return T.executeTrade(tradeInfo);
+
+    if (previewOnly) {
+      return trading.previewTrade(tradeInfo);
+    }
+    return trading.executeTrade(tradeInfo);
   }
 }

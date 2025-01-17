@@ -50,6 +50,9 @@ export const BITCOIN_NETWORKS: Record<string, any> = {
 
 export const SUPPORTED_CRYPTO_ASSETS: Array<TCryptoAsset> = [
   // BIP44 Coins (Non-ERC20)
+  { name: 'Ethereum', symbol: 'ETH', coinType: 60, isErc20: false },
+  { name: 'Stellar Lumens', symbol: 'XLM', coinType: 148, isErc20: false },
+  { name: 'Ripple', symbol: 'XRP', coinType: 144, isErc20: false },
   { name: 'Bitcoin', symbol: 'BTC', coinType: 0, isErc20: false },
   { name: 'Litecoin', symbol: 'LTC', coinType: 2, isErc20: false },
   { name: 'Dogecoin', symbol: 'DOGE', coinType: 3, isErc20: false },
@@ -194,6 +197,108 @@ export const SUPPORTED_CRYPTO_ASSETS: Array<TCryptoAsset> = [
     isErc20: true,
   },
   {
+    name: 'Maker',
+    symbol: 'MKR',
+    address: '0x9f8F72aA9304c8B593d555F12ef6589cC3A579A2',
+    isErc20: true,
+  },
+  {
+    name: 'Compound',
+    symbol: 'COMP',
+    address: '0xc00e94Cb662C3520282E6f5717214004A7f26888',
+    isErc20: true,
+  },
+  {
+    name: 'Yearn Finance',
+    symbol: 'YFI',
+    address: '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e',
+    isErc20: true,
+  },
+  {
+    name: 'SushiSwap',
+    symbol: 'SUSHI',
+    address: '0x6B3595068778DD592e39A122f4f5a5CF09C90fE2',
+    isErc20: true,
+  },
+  {
+    name: '1inch',
+    symbol: '1INCH',
+    address: '0x111111111117dC0aa78b770fA6A738034120C302',
+    isErc20: true,
+  },
+  {
+    name: 'Balancer',
+    symbol: 'BAL',
+    address: '0xba100000625a3754423978a60c9317c58a424e3D',
+    isErc20: true,
+  },
+  {
+    name: 'Ren',
+    symbol: 'REN',
+    address: '0x408e41876cCCDC0F92210600ef50372656052a38',
+    isErc20: true,
+  },
+  {
+    name: 'Kyber Network',
+    symbol: 'KNC',
+    address: '0xdd974D5C2e2928dea5F71b9825b8b646686bd200',
+    isErc20: true,
+  },
+  {
+    name: 'Band Protocol',
+    symbol: 'BAND',
+    address: '0xba11D3e6b3464C6eB7eC6bF7d7eB8d9Ff8A8B8e1',
+    isErc20: true,
+  },
+  {
+    name: 'Ocean Protocol',
+    symbol: 'OCEAN',
+    address: '0x967da4048cD07aB37855c090aAF366e4ce1b9F48',
+    isErc20: true,
+  },
+  {
+    name: 'Orchid',
+    symbol: 'OXT',
+    address: '0x4575f41308ec1483f3d399aa9a2826d74da13deb',
+    isErc20: true,
+  },
+  {
+    name: 'Aragon',
+    symbol: 'ANT',
+    address: '0xa117000000f279D81A1D3cc75430fAA017FA5A2e',
+    isErc20: true,
+  },
+  {
+    name: 'Civic',
+    symbol: 'CVC',
+    address: '0x41e5560054824ea6b0732e656e3ad64e20e94e45',
+    isErc20: true,
+  },
+  {
+    name: 'Storj',
+    symbol: 'STORJ',
+    address: '0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC',
+    isErc20: true,
+  },
+  {
+    name: 'Status',
+    symbol: 'SNT',
+    address: '0x744d70fdbe2ba4cf95131626614a1763df805b9e',
+    isErc20: true,
+  },
+  {
+    name: 'Augur',
+    symbol: 'REP',
+    address: '0x1985365e9f78359a9b6ad760e32412f4a445e862',
+    isErc20: true,
+  },
+  {
+    name: 'Golem',
+    symbol: 'GLM',
+    address: '0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429',
+    isErc20: true,
+  },
+  {
     name: 'Loopring',
     symbol: 'LRC',
     address: '0xBBbbCA6A901c926F240b89EacB641d8Aec7AEaF9',
@@ -203,6 +308,12 @@ export const SUPPORTED_CRYPTO_ASSETS: Array<TCryptoAsset> = [
     name: 'Enjin Coin',
     symbol: 'ENJ',
     address: '0xF629cBd94d3791C9250152BD8dFbDF380E2a3B9c',
+    isErc20: true,
+  },
+  {
+    name: 'Decentraland',
+    symbol: 'MANA',
+    address: '0x0f5D2fB29fb7d3CFeE444a200298f468908cC942',
     isErc20: true,
   },
   {
@@ -317,16 +428,6 @@ export const SUPPORTED_CRYPTO_ASSETS: Array<TCryptoAsset> = [
     name: 'Yield Yak',
     symbol: 'YAK',
     address: '0x9D9442C74D8593D02E2180A35C4B286C50E7B600',
-    isErc20: true,
-  },
-
-  // Other Known Sh*tcoins
-  { name: 'Stellar Lumens', symbol: 'XLM', coinType: 148, isErc20: false },
-  { name: 'Ripple', symbol: 'XRP', coinType: 144, isErc20: false },
-  {
-    name: 'Doge Killer',
-    symbol: 'LEASH',
-    address: '0x27C70Cd1946795B66be9d954418546998b546634',
     isErc20: true,
   },
 ];

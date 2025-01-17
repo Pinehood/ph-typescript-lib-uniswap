@@ -15,7 +15,7 @@ export async function generatePrivateKeyAndContractAddress(
   coin: string
 ) {
   if (!bip39.validateMnemonic(mnemonic)) {
-    throw new Error('Invalid mnemonic phrase.');
+    throw new Error('Invalid mnemonic phrase');
   }
 
   const seed = await bip39.mnemonicToSeed(mnemonic);
@@ -27,7 +27,6 @@ export async function generatePrivateKeyAndContractAddress(
     : (SUPPORTED_CRYPTO_ASSETS.find(
         (a) => a.isErc20 !== true && a.symbol === coin
       )?.coinType ?? -1);
-
   const contract = SUPPORTED_CRYPTO_ASSETS.find(
     (a) => a.symbol === coin
   )?.address;
@@ -51,7 +50,7 @@ export async function generatePrivateKeyAndContractAddress(
   }
 
   const privateKey = wallet.privateKey;
-  let publicAddress = 'N/A';
+  let publicAddress = '0x0000000000000000000000000000000000000000';
   if (isERC20 || coinType === 60) {
     const ethWalletInstance = Wallet.fromPrivateKey(privateKey);
     publicAddress = ethWalletInstance.getAddressString();
@@ -71,7 +70,7 @@ export async function generatePrivateKeyAndContractAddress(
     });
     const wifPrivateKey = wif.encode({
       version: network.wif,
-      privateKey: privateKey,
+      privateKey: keyPair.privateKey!,
       compressed: true,
     });
     return {

@@ -35,10 +35,9 @@ import { generatePrivateKeyAndContractAddress, UniswapClient } from '.';
   );
   const client = new UniswapClient({
     privKey: key,
-    infuraApiKey: 'api-key',
   });
   try {
-    console.log(contract, await client.getBalance(contract ?? address));
+    console.log(await client.getBalance(contract ?? address));
   } catch (e) {
     console.error(e);
   }

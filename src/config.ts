@@ -2,7 +2,7 @@ import { IExampleConfig } from './definitions';
 
 const CONTRACT_CONFIG: Array<IExampleConfig> = [
   {
-    name: 'eth-mainnet',
+    name: 'ETH',
     chainId: 1,
     rpc: 'https://eth.llamarpc.com',
     poolFactoryAddress: '0x1F98431c8aD98523631AE4a59f267346ea31F984',

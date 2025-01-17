@@ -1,10 +1,10 @@
+import * as wif from 'wif';
+import { ethers, toNumber, Provider, TransactionReceipt } from 'ethers';
 import { Trade } from '@uniswap/v3-sdk';
 import { Currency } from '@uniswap/sdk-core';
 import { Token, TradeType } from '@uniswap/sdk-core';
-import { Provider } from 'ethers';
-import { ethers, toNumber } from 'ethers';
 import { ERC20_ABI } from './constants';
-import { ETransactionStates } from './definitions';
+import { ETransactionStates, TTransactionState } from './definitions';
 
 export function fromReadableAmount(amount: number, decimals: number): bigint {
   return ethers.parseUnits(amount.toString(), decimals);
@@ -22,7 +22,12 @@ export function displayTrade(trade: Trade<Token, Token, TradeType>): string {
 
 export function createWallet(privKey: string, rpcUrl: string): ethers.Wallet {
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  return new ethers.Wallet(privKey, provider);
+  if (ethers.isHexString(privKey) && privKey.length === 66) {
+    return new ethers.Wallet(privKey, provider);
+  }
+  const decoded = wif.decode(privKey);
+  const privateKey = ethers.hexlify(decoded.privateKey);
+  return new ethers.Wallet(privateKey, provider);
 }
 
 export async function getCurrencyBalance(
@@ -63,7 +68,7 @@ export async function sendTransaction(
   wallet: ethers.Wallet,
   transaction: ethers.TransactionRequest,
   noWait?: boolean
-): Promise<ETransactionStates> {
+): Promise<TTransactionState> {
   const provider = wallet.provider;
   if (!provider) {
     return ETransactionStates.FAILED;
@@ -73,16 +78,16 @@ export async function sendTransaction(
     transaction.value = BigInt(transaction.value);
   }
 
-  const fee = await provider!.getFeeData();
-  if ((await provider!.getNetwork()).chainId === 137n) {
-    transaction.gasPrice = fee.gasPrice! * 2n;
-  } else {
-    transaction.maxFeePerGas = fee.maxFeePerGas! * 2n;
-    transaction.maxPriorityFeePerGas = fee.maxPriorityFeePerGas! * 2n;
+  const fee = await provider.getFeeData();
+  if (fee.maxFeePerGas) {
+    transaction.maxFeePerGas = fee.maxFeePerGas * 2n;
+  }
+  if (fee.maxPriorityFeePerGas) {
+    transaction.maxPriorityFeePerGas = fee.maxPriorityFeePerGas * 2n;
   }
 
   const txRes = await wallet.sendTransaction(transaction);
-  let receipt = null;
+  let receipt: TransactionReceipt | null = null;
 
   while (!noWait && receipt === null) {
     try {
@@ -100,4 +105,15 @@ export async function sendTransaction(
   } else {
     return ETransactionStates.FAILED;
   }
+}
+
+export async function getEthPriceUSD(): Promise<number> {
+  const res = await fetch(
+    'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+  );
+  const data: any = await res.json();
+  if (data && data.ethereum) {
+    return Number(data.ethereum.usd);
+  }
+  return -1;
 }

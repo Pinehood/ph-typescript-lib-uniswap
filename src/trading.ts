@@ -9,7 +9,7 @@ import {
 } from '@uniswap/v3-sdk';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
-import { ethers, toNumber } from 'ethers';
+import { ethers, toNumber, TransactionRequest } from 'ethers';
 import { Provider } from 'ethers';
 import JSBI from 'jsbi';
 import {
@@ -18,12 +18,18 @@ import {
   SWAP_ROUTER_ADDRESS,
   POOL_FACTORY_CONTRACT_ADDRESS,
 } from './constants';
-import { fromReadableAmount, createWallet, sendTransaction } from './utils';
+import {
+  fromReadableAmount,
+  createWallet,
+  sendTransaction,
+  getEthPriceUSD,
+} from './utils';
 import {
   IPoolInfo,
   ITradeInfo,
   ETransactionStates,
   TPreviewData,
+  TTransactionState,
 } from './definitions';
 
 export class Trading {
@@ -32,25 +38,28 @@ export class Trading {
   private readonly poolFactoryAddress: string = POOL_FACTORY_CONTRACT_ADDRESS;
   private readonly swapRouterAddress: string = SWAP_ROUTER_ADDRESS;
   private readonly quoterAddress: string = QUOTER_CONTRACT_ADDRESS;
+  private readonly slippage: number;
+  private readonly deadline: number;
 
   constructor(
     key: string,
     provider: string,
     chainId: number,
     poolFactoryAddress?: string,
-    swapRounerAddress?: string,
-    quoterAddress?: string
+    swapRouterAddress?: string,
+    quoterAddress?: string,
+    slippage?: number,
+    deadline?: number
   ) {
-    if (typeof key === 'string' && !key.startsWith('0x')) {
-      key = '0x' + key;
-    }
     this.wallet = createWallet(key, provider);
     this.chainId = chainId;
+    this.slippage = slippage || 5;
+    this.deadline = deadline || 15;
     if (poolFactoryAddress) {
       this.poolFactoryAddress = poolFactoryAddress;
     }
-    if (swapRounerAddress) {
-      this.swapRouterAddress = swapRounerAddress;
+    if (swapRouterAddress) {
+      this.swapRouterAddress = swapRouterAddress;
     }
     if (quoterAddress) {
       this.quoterAddress = quoterAddress;
@@ -141,12 +150,13 @@ export class Trading {
     };
   }
 
-  async getTokenApprovalMax(token: Token): Promise<ETransactionStates> {
+  async getTokenApprovalMax(token: Token): Promise<TTransactionState> {
     const provider = this.getProvider();
     const address = this.getWalletAddress();
     if (!provider || !address) {
       return ETransactionStates.FAILED;
     }
+
     try {
       const tokenContract = new ethers.Contract(
         token.address,
@@ -169,12 +179,13 @@ export class Trading {
   async getTokenTransferApproval(
     token: Token,
     requiredAmount: number
-  ): Promise<ETransactionStates> {
+  ): Promise<TTransactionState> {
     const provider = this.getProvider();
     const address = this.getWalletAddress();
     if (!provider || !address) {
       return ETransactionStates.FAILED;
     }
+
     try {
       const tokenContract = new ethers.Contract(
         token.address,
@@ -198,7 +209,6 @@ export class Trading {
         this.swapRouterAddress,
         requiredAllowance
       );
-
       return sendTransaction(this.wallet, {
         ...transaction,
         from: address,
@@ -273,7 +283,7 @@ export class Trading {
     };
   }
 
-  executeTrade(tradeInfo: ITradeInfo): Promise<ETransactionStates> {
+  executeTrade(tradeInfo: ITradeInfo): Promise<TTransactionState> {
     const walletAddress = this.getWalletAddress();
     const provider = this.getProvider();
 
@@ -281,27 +291,22 @@ export class Trading {
       throw new Error('Cannot execute a trade without a connected wallet');
     }
 
-    const methodParameters = SwapRouter.swapCallParameters([tradeInfo.trade], {
-      slippageTolerance: new Percent(5, 10_000),
-      deadline: Math.floor(Date.now() / 1000) + 60 * 15,
-      recipient: walletAddress,
-    });
-
     return sendTransaction(
       this.wallet,
-      {
-        data: methodParameters.calldata,
-        to: this.swapRouterAddress,
-        value: methodParameters.value,
-        from: walletAddress,
-      },
+      this.getTransactionRequest(tradeInfo, walletAddress),
       true
     );
   }
 
   async previewTrade(tradeInfo: ITradeInfo): Promise<TPreviewData> {
-    const { tokenIn, tokenOut, amount } = tradeInfo;
+    const provider = this.getProvider();
+    const walletAddress = this.getWalletAddress();
 
+    if (!walletAddress || !provider) {
+      throw new Error('Cannot preview a trade without a connected wallet');
+    }
+
+    const { tokenIn, tokenOut, amount } = tradeInfo;
     const poolInfo = await this.getPoolInfo(tokenIn, tokenOut);
     const pool = new Pool(
       tokenIn,
@@ -330,12 +335,38 @@ export class Trading {
       tradeType: TradeType.EXACT_INPUT,
     });
 
-    const output = trade.outputAmount.toSignificant(6);
-    const price = trade.priceImpact.toSignificant(6);
+    const output = Number(trade.outputAmount.toSignificant(6));
+    const price = Number(trade.priceImpact.toSignificant(6));
+
+    const gas = BigInt(
+      await provider.estimateGas(
+        this.getTransactionRequest(tradeInfo, walletAddress)
+      )
+    ).toString();
+    const ethPrice = await getEthPriceUSD();
 
     return {
       output,
       price,
+      gas: parseFloat(gas) * ethPrice,
+    };
+  }
+
+  private getTransactionRequest(
+    tradeInfo: ITradeInfo,
+    walletAddress: string
+  ): TransactionRequest {
+    const { trade } = tradeInfo;
+    const methodParameters = SwapRouter.swapCallParameters([trade], {
+      slippageTolerance: new Percent(this.slippage, 10_000),
+      deadline: Math.floor(Date.now() / 1000) + 60 * this.deadline,
+      recipient: walletAddress,
+    });
+    return {
+      data: methodParameters.calldata,
+      to: this.swapRouterAddress,
+      value: methodParameters.value,
+      from: walletAddress,
     };
   }
 }

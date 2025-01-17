@@ -2,11 +2,11 @@ import { Token, TradeType } from '@uniswap/sdk-core';
 import { Trade } from '@uniswap/v3-sdk';
 
 export enum ETransactionStates {
-  FAILED = 'Failed',
-  NEW = 'New',
-  REJECTED = 'Rejected',
-  SENDING = 'Sending',
-  SENT = 'Sent',
+  FAILED = 'failed',
+  NEW = 'new',
+  REJECTED = 'rejected',
+  SENDING = 'sending',
+  SENT = 'sent',
 }
 
 export interface IExampleConfig {
@@ -37,6 +37,7 @@ export interface ITradeInfo {
 }
 
 export type TTokenTrade = Trade<Token, Token, TradeType>;
+export type TTransactionState = Lowercase<keyof typeof ETransactionStates>;
 
 export type TCryptoAsset = {
   name: string;
@@ -47,13 +48,15 @@ export type TCryptoAsset = {
 };
 
 export type TPreviewData = Partial<{
-  output: string;
-  price: string;
-  gas: string;
+  output: number;
+  price: number;
+  gas: number;
 }>;
 
 export type TUniswapConfig = {
   chainId?: number;
   rpcUrl?: string;
   privKey: string;
+  slippage?: number;
+  deadline?: number;
 };
