@@ -7,7 +7,6 @@ import {
   ETransactionStates,
   TPreviewData,
   TTransactionResult,
-  TTransactionState,
   TUniswapConfig,
 } from './definitions';
 

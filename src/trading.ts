@@ -32,7 +32,6 @@ import {
   ITradeInfo,
   ETransactionStates,
   TPreviewData,
-  TTransactionState,
   TTransactionResult,
 } from './definitions';
 
