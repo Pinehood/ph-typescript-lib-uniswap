@@ -7,10 +7,8 @@ export const ETH_PRICE_URL =
 
 export const POOL_FACTORY_CONTRACT_ADDRESS =
   '0x1F98431c8aD98523631AE4a59f267346ea31F984';
-
 export const QUOTER_CONTRACT_ADDRESS =
   '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
-
 export const SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 
 export const ERC20_ABI = [
@@ -29,7 +27,7 @@ export const TOKEN_AMOUNT_TO_APPROVE_FOR_TRANSFER = 2000;
 export const SLIPPAGE_TOLERANCE = 5;
 export const DEADLINE = 15;
 
-export const BITCOIN_NETWORKS: Record<string, any> = {
+export const BITCOIN_NETWORKS: Record<string, bitcoin.Network> = {
   BTC: bitcoin.networks.bitcoin,
   DOGE: {
     messagePrefix: '\x19Dogecoin Signed Message:\n',
@@ -111,7 +109,7 @@ export const SUPPORTED_CRYPTO_ASSETS: Array<TCryptoAsset> = [
     isErc20: false,
   },
 
-  // ERC-20 Tokens (Tradeable on Uniswap)
+  // ERC-20 Tokens
   {
     name: 'Chainlink',
     symbol: 'LINK',

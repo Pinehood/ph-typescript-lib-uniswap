@@ -5,9 +5,9 @@ import {
   RPC_URL,
   SWAP_ROUTER_ADDRESS,
 } from './constants';
-import { IClientConfig } from './definitions';
+import { IContractConfig } from './definitions';
 
-const CONTRACT_CONFIG: Array<IClientConfig> = [
+const CONTRACT_CONFIG: Array<IContractConfig> = [
   {
     name: 'ETH',
     chainId: ChainId.MAINNET,
@@ -18,7 +18,7 @@ const CONTRACT_CONFIG: Array<IClientConfig> = [
   },
 ];
 
-export function loadTradeConfig(chainId: number): IClientConfig | null {
+export function loadTradeConfig(chainId: number): IContractConfig | null {
   for (let index = 0; index < CONTRACT_CONFIG.length; index++) {
     const element = CONTRACT_CONFIG[index];
     if (element.chainId == chainId) {
@@ -28,6 +28,6 @@ export function loadTradeConfig(chainId: number): IClientConfig | null {
   return null;
 }
 
-export function addTradeConfig(config: IClientConfig) {
+export function addTradeConfig(config: IContractConfig) {
   CONTRACT_CONFIG.push(config);
 }

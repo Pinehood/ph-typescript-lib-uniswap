@@ -69,19 +69,19 @@ export class Trading {
     }
   }
 
-  getWallet(): ethers.Wallet | null {
+  getWallet() {
     return this.wallet;
   }
 
-  getChainId(): number {
+  getChainId() {
     return this.chainId;
   }
 
-  getProvider(): Provider | null {
+  getProvider() {
     return this.wallet.provider;
   }
 
-  getWalletAddress(): string | null {
+  getWalletAddress() {
     return this.wallet.address;
   }
 
@@ -348,17 +348,14 @@ export class Trading {
       getEthPriceUSD(),
     ]);
 
-    const gas =
-      results[0].status === 'fulfilled'
-        ? toNumber(BigInt(results[0].value))
-        : -1;
-    const eth = results[1].status === 'fulfilled' ? results[1].value : -1;
-
     return {
       output,
       price,
-      gas,
-      eth,
+      gas:
+        results[0].status === 'fulfilled'
+          ? toNumber(BigInt(results[0].value))
+          : -1,
+      eth: results[1].status === 'fulfilled' ? results[1].value : -1,
     };
   }
 

@@ -10,7 +10,7 @@ export enum ETransactionStates {
   SENT = 'sent',
 }
 
-export interface IClientConfig {
+export interface IContractConfig {
   chainId: number;
   name: string;
   rpc: string;

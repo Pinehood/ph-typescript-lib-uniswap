@@ -1,5 +1,5 @@
 .env
-src/rest/main.ts
+src/main.ts
 dist/
 node_modules/
 .idea/
