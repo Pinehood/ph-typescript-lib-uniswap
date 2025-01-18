@@ -3,8 +3,8 @@ import { ethers, toNumber, Provider, TransactionReceipt } from 'ethers';
 import { Trade } from '@uniswap/v3-sdk';
 import { Currency } from '@uniswap/sdk-core';
 import { Token, TradeType } from '@uniswap/sdk-core';
-import { ERC20_ABI } from './constants';
-import { ETransactionStates, TTransactionState } from './definitions';
+import { ERC20_ABI, ETH_PRICE_URL } from './constants';
+import { ETransactionStates, TTransactionResult } from './definitions';
 
 export function fromReadableAmount(amount: number, decimals: number): bigint {
   return ethers.parseUnits(amount.toString(), decimals);
@@ -68,10 +68,10 @@ export async function sendTransaction(
   wallet: ethers.Wallet,
   transaction: ethers.TransactionRequest,
   noWait?: boolean
-): Promise<TTransactionState> {
+): Promise<TTransactionResult> {
   const provider = wallet.provider;
   if (!provider) {
-    return ETransactionStates.FAILED;
+    return { state: ETransactionStates.FAILED };
   }
 
   if (transaction.value) {
@@ -100,17 +100,15 @@ export async function sendTransaction(
     }
   }
 
-  if (receipt || noWait) {
-    return ETransactionStates.SENT;
+  if (receipt && noWait) {
+    return { state: ETransactionStates.SENT, receipt };
   } else {
-    return ETransactionStates.FAILED;
+    return { state: ETransactionStates.FAILED };
   }
 }
 
 export async function getEthPriceUSD(): Promise<number> {
-  const res = await fetch(
-    'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
-  );
+  const res = await fetch(ETH_PRICE_URL);
   const data: any = await res.json();
   if (data && data.ethereum) {
     return Number(data.ethereum.usd);

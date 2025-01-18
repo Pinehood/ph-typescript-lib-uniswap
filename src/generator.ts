@@ -6,19 +6,10 @@ import * as wif from 'wif';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
 import { Keypair } from '@solana/web3.js';
+import { ADDRESS_ZERO } from '@uniswap/v3-sdk';
 import { BITCOIN_NETWORKS, SUPPORTED_CRYPTO_ASSETS } from './constants';
 
-const ECPair = ECPairFactory(ecc);
-
-export async function generatePrivateKeyAndContractAddress(
-  mnemonic: string,
-  coin: string
-) {
-  if (!bip39.validateMnemonic(mnemonic)) {
-    throw new Error('Invalid mnemonic phrase');
-  }
-
-  const seed = await bip39.mnemonicToSeed(mnemonic);
+const getCoinDetails = (coin: string) => {
   const isERC20 = SUPPORTED_CRYPTO_ASSETS.some(
     (a) => a.isErc20 === true && a.symbol === coin
   );
@@ -30,6 +21,20 @@ export async function generatePrivateKeyAndContractAddress(
   const contract = SUPPORTED_CRYPTO_ASSETS.find(
     (a) => a.symbol === coin
   )?.address;
+  return { isERC20, coinType, contract };
+};
+
+export async function generatePrivateKeyAndContractAddress(
+  mnemonic: string,
+  coin: string
+) {
+  if (!bip39.validateMnemonic(mnemonic)) {
+    throw new Error('Invalid mnemonic phrase');
+  }
+
+  const ECPair = ECPairFactory(ecc);
+  const seed = await bip39.mnemonicToSeed(mnemonic);
+  const { isERC20, coinType, contract } = getCoinDetails(coin);
 
   if (coin === 'SOL') {
     const solanaSeed = seed.slice(0, 32);
@@ -49,21 +54,18 @@ export async function generatePrivateKeyAndContractAddress(
     throw new Error(`Private key generation failed for ${coin}`);
   }
 
-  const privateKey = wallet.privateKey;
-  let publicAddress = '0x0000000000000000000000000000000000000000';
   if (isERC20 || coinType === 60) {
-    const ethWalletInstance = Wallet.fromPrivateKey(privateKey);
-    publicAddress = ethWalletInstance.getAddressString();
+    const ethWalletInstance = Wallet.fromPrivateKey(wallet.privateKey);
     return {
       key: ethWalletInstance.getPrivateKeyString(),
-      address: publicAddress,
+      address: ethWalletInstance.getAddressString(),
       contract,
     };
   }
 
   const network = BITCOIN_NETWORKS[coin as keyof typeof BITCOIN_NETWORKS];
   if (network) {
-    const keyPair = ECPair.fromPrivateKey(privateKey, { network });
+    const keyPair = ECPair.fromPrivateKey(wallet.privateKey, { network });
     const { address } = bitcoin.payments.p2pkh({
       pubkey: Buffer.from(keyPair.publicKey),
       network,
@@ -81,8 +83,8 @@ export async function generatePrivateKeyAndContractAddress(
   }
 
   return {
-    key: privateKey.toString('hex'),
-    address: publicAddress,
+    key: wallet.privateKey.toString('hex'),
+    address: ADDRESS_ZERO,
     contract,
   };
 }

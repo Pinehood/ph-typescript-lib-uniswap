@@ -1,5 +1,6 @@
 import { Token, TradeType } from '@uniswap/sdk-core';
 import { Trade } from '@uniswap/v3-sdk';
+import { TransactionReceipt } from 'ethers';
 
 export enum ETransactionStates {
   FAILED = 'failed',
@@ -9,7 +10,7 @@ export enum ETransactionStates {
   SENT = 'sent',
 }
 
-export interface IExampleConfig {
+export interface IClientConfig {
   chainId: number;
   name: string;
   rpc: string;
@@ -39,6 +40,11 @@ export interface ITradeInfo {
 export type TTokenTrade = Trade<Token, Token, TradeType>;
 export type TTransactionState = Lowercase<keyof typeof ETransactionStates>;
 
+export type TTransactionResult = {
+  state: TTransactionState;
+  receipt?: TransactionReceipt;
+};
+
 export type TCryptoAsset = {
   name: string;
   symbol: string;
@@ -51,6 +57,7 @@ export type TPreviewData = Partial<{
   output: number;
   price: number;
   gas: number;
+  eth: number;
 }>;
 
 export type TUniswapConfig = {

@@ -6,6 +6,7 @@ import { getCurrencyBalance, getCurrencyDecimals } from './utils';
 import {
   ETransactionStates,
   TPreviewData,
+  TTransactionResult,
   TTransactionState,
   TUniswapConfig,
 } from './definitions';
@@ -62,7 +63,7 @@ export class UniswapClient {
     previewOnly?: boolean,
     needApproval?: boolean,
     approvalMax?: boolean
-  ): Promise<TTransactionState | TPreviewData> {
+  ): Promise<TTransactionResult | TPreviewData> {
     const { chainId = 1, rpcUrl, privKey } = this.config;
     const conf = loadTradeConfig(chainId);
     if (!conf) {
@@ -83,7 +84,7 @@ export class UniswapClient {
     const provider = trading.getProvider();
     const walletAddress = trading.getWalletAddress();
     if (!provider || !walletAddress) {
-      return ETransactionStates.FAILED;
+      return { state: ETransactionStates.FAILED };
     }
 
     const results = await Promise.allSettled([
@@ -112,7 +113,7 @@ export class UniswapClient {
     );
 
     if (parseFloat(tokenInBalance) < amountToSwap) {
-      return ETransactionStates.REJECTED;
+      return { state: ETransactionStates.REJECTED };
     }
 
     if (amountToSwap <= 0) {
@@ -123,8 +124,8 @@ export class UniswapClient {
       const ret = approvalMax
         ? await trading.getTokenApprovalMax(tokenIn)
         : await trading.getTokenTransferApproval(tokenIn, amountToSwap);
-      if (ret !== ETransactionStates.SENT) {
-        return ETransactionStates.FAILED;
+      if (ret.state !== ETransactionStates.SENT) {
+        return { state: ETransactionStates.FAILED };
       }
     }
 
@@ -134,7 +135,7 @@ export class UniswapClient {
       amountToSwap
     );
     if (!tradeInfo) {
-      return ETransactionStates.FAILED;
+      return { state: ETransactionStates.FAILED };
     }
 
     if (previewOnly) {

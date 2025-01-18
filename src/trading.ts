@@ -6,6 +6,7 @@ import {
   SwapRouter,
   Trade,
   FeeAmount,
+  ADDRESS_ZERO,
 } from '@uniswap/v3-sdk';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import IUniswapV3FactoryABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json';
@@ -17,6 +18,8 @@ import {
   QUOTER_CONTRACT_ADDRESS,
   SWAP_ROUTER_ADDRESS,
   POOL_FACTORY_CONTRACT_ADDRESS,
+  SLIPPAGE_TOLERANCE,
+  DEADLINE,
 } from './constants';
 import {
   fromReadableAmount,
@@ -30,6 +33,7 @@ import {
   ETransactionStates,
   TPreviewData,
   TTransactionState,
+  TTransactionResult,
 } from './definitions';
 
 export class Trading {
@@ -53,8 +57,8 @@ export class Trading {
   ) {
     this.wallet = createWallet(key, provider);
     this.chainId = chainId;
-    this.slippage = slippage || 5;
-    this.deadline = deadline || 15;
+    this.slippage = slippage || SLIPPAGE_TOLERANCE;
+    this.deadline = deadline || DEADLINE;
     if (poolFactoryAddress) {
       this.poolFactoryAddress = poolFactoryAddress;
     }
@@ -100,26 +104,26 @@ export class Trading {
       FeeAmount.LOWEST
     );
 
-    if (currentPoolAddress == '0x0000000000000000000000000000000000000000')
+    if (currentPoolAddress == ADDRESS_ZERO)
       currentPoolAddress = await factoryContract.getPool(
         tokenIn.address,
         tokenOut.address,
         FeeAmount.LOW
       );
-    if (currentPoolAddress == '0x0000000000000000000000000000000000000000')
+    if (currentPoolAddress == ADDRESS_ZERO)
       currentPoolAddress = await factoryContract.getPool(
         tokenIn.address,
         tokenOut.address,
         FeeAmount.MEDIUM
       );
-    if (currentPoolAddress == '0x0000000000000000000000000000000000000000')
+    if (currentPoolAddress == ADDRESS_ZERO)
       currentPoolAddress = await factoryContract.getPool(
         tokenIn.address,
         tokenOut.address,
         FeeAmount.HIGH
       );
 
-    if (currentPoolAddress == '0x0000000000000000000000000000000000000000') {
+    if (currentPoolAddress == ADDRESS_ZERO) {
       throw new Error('Pool not founded!');
     }
 
@@ -150,11 +154,11 @@ export class Trading {
     };
   }
 
-  async getTokenApprovalMax(token: Token): Promise<TTransactionState> {
+  async getTokenApprovalMax(token: Token): Promise<TTransactionResult> {
     const provider = this.getProvider();
     const address = this.getWalletAddress();
     if (!provider || !address) {
-      return ETransactionStates.FAILED;
+      return { state: ETransactionStates.FAILED };
     }
 
     try {
@@ -172,18 +176,18 @@ export class Trading {
         from: address,
       });
     } catch {
-      return ETransactionStates.FAILED;
+      return { state: ETransactionStates.FAILED };
     }
   }
 
   async getTokenTransferApproval(
     token: Token,
     requiredAmount: number
-  ): Promise<TTransactionState> {
+  ): Promise<TTransactionResult> {
     const provider = this.getProvider();
     const address = this.getWalletAddress();
     if (!provider || !address) {
-      return ETransactionStates.FAILED;
+      return { state: ETransactionStates.FAILED };
     }
 
     try {
@@ -202,7 +206,7 @@ export class Trading {
       );
 
       if (allowance > requiredAllowance) {
-        return ETransactionStates.SENT;
+        return { state: ETransactionStates.SENT };
       }
 
       const transaction = await tokenContract.approve.populateTransaction(
@@ -214,7 +218,7 @@ export class Trading {
         from: address,
       });
     } catch {
-      return ETransactionStates.FAILED;
+      return { state: ETransactionStates.FAILED };
     }
   }
 
@@ -283,7 +287,7 @@ export class Trading {
     };
   }
 
-  executeTrade(tradeInfo: ITradeInfo): Promise<TTransactionState> {
+  executeTrade(tradeInfo: ITradeInfo): Promise<TTransactionResult> {
     const walletAddress = this.getWalletAddress();
     const provider = this.getProvider();
 
@@ -338,17 +342,24 @@ export class Trading {
     const output = Number(trade.outputAmount.toSignificant(6));
     const price = Number(trade.priceImpact.toSignificant(6));
 
-    const gas = BigInt(
-      await provider.estimateGas(
+    const results = await Promise.allSettled([
+      provider.estimateGas(
         this.getTransactionRequest(tradeInfo, walletAddress)
-      )
-    ).toString();
-    const ethPrice = await getEthPriceUSD();
+      ),
+      getEthPriceUSD(),
+    ]);
+
+    const gas =
+      results[0].status === 'fulfilled'
+        ? toNumber(BigInt(results[0].value))
+        : -1;
+    const eth = results[1].status === 'fulfilled' ? results[1].value : -1;
 
     return {
       output,
       price,
-      gas: parseFloat(gas) * ethPrice,
+      gas,
+      eth,
     };
   }
 

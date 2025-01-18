@@ -1,6 +1,10 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { TCryptoAsset } from './definitions';
 
+export const RPC_URL = 'https://eth.llamarpc.com';
+export const ETH_PRICE_URL =
+  'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd';
+
 export const POOL_FACTORY_CONTRACT_ADDRESS =
   '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 
@@ -22,6 +26,8 @@ export const ERC20_ABI = [
 export const MAX_FEE_PER_GAS = 220 * 1000000000;
 export const MAX_PRIORITY_FEE_PER_GAS = MAX_FEE_PER_GAS;
 export const TOKEN_AMOUNT_TO_APPROVE_FOR_TRANSFER = 2000;
+export const SLIPPAGE_TOLERANCE = 5;
+export const DEADLINE = 15;
 
 export const BITCOIN_NETWORKS: Record<string, any> = {
   BTC: bitcoin.networks.bitcoin,
