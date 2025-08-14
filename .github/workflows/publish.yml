@@ -1,7 +1,7 @@
 name: NPM Publish Package
 on:
   workflow_run:
-    workflows: ["NPM Version Upgrade"]
+    workflows: ['NPM Version Upgrade']
     types: [completed]
 jobs:
   publish:
@@ -10,20 +10,20 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref_name == 'main' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup
         uses: actions/setup-node@v4
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-          scope: "pinehood"
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+          scope: 'pinehood'
       - name: Install
         run: npm install
       - name: Build
         run: npm run build
         env:
-          NODE_OPTIONS: "--max_old_space_size=8192"
+          NODE_OPTIONS: '--max_old_space_size=8192'
       - name: Publish
         run: npm publish
         env:

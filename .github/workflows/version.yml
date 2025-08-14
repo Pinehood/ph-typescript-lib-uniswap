@@ -1,7 +1,7 @@
 name: NPM Version Upgrade
 on:
   workflow_run:
-    workflows: ["Continuous Integration"]
+    workflows: ['Continuous Integration']
     types: [completed]
 jobs:
   publish:
@@ -10,12 +10,12 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref_name == 'main' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup
         uses: actions/setup-node@v4
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          cache: "npm"
+          cache: 'npm'
       - name: Git Configuration
         run: |
           git config --global user.email "$EMAIL"
