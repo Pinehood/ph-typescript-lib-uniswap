@@ -1,6 +1,6 @@
 {
   "name": "ph-typescript-lib-uniswap",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "scripts": {
     "lint": "eslint \"./src/**/*.ts\"",
     "prettier": "npx prettier --write \"src/**/*.ts\"",
